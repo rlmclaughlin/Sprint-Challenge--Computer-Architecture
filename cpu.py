@@ -78,6 +78,32 @@ class CPU:
     def ram_write(self, MAR, MDR):
         self.ram[MAR] = MDR
 
+    def mul(self, operand_a, operand_b):
+        self.alu("MUL", operand_a, operand_b)
+
+    def add(self, operand_a, operand_b):
+        self.alu("ADD", operand_a, operand_b)
+
+    def push(self, MAR):
+        self.reg[7] = (self.reg[7] - 1) % 255
+        self.SP = self.reg[7]
+        self.ram[self.SP] = self.reg[MAR]
+
+    def pop(self, MAR):
+        self.SP = self.reg[7]
+        self.reg[MAR] = self.ram[self.SP]
+        self.reg[7] = (self.reg[7] +1) % 255
+
+    def call(self, operand_a, operand_b):
+        self.push(operand_a, operand_b)
+        self.ram[self.SP] = self.pc + 2
+        self.pc = self.reg[operand_a]
+
+     def ret(self):
+        self.pc = self.ram[self.SP]
+
+
+
     def load(self):
         address = 0
         
