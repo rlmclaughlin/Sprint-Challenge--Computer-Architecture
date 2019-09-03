@@ -16,7 +16,6 @@ SHL = 0b10101100
 SHR = 0b10101101 
 ALU_OP = [ADD, SUB, MUL, DIV, MOD, INC, DEC, CMP, AND, NOT, OR, XOR, SHL, SHR]
 
-
 CALL = 0b01010000 
 RET  = 0b00010001 
 INT  = 0b01010010
@@ -28,7 +27,6 @@ JGT  = 0b01010111
 JLT  = 0b01011000 
 JLE  = 0b01011001 
 JGE  = 0b01011010 
-
 
 NOP = 0b00000000
 HLT = 0b00000001 
@@ -51,9 +49,10 @@ class CPU:
         self.pc = 0
         self.SP = 0
         self.halt = False
-
+        self.FL = 0b00000000
         self.reg[7] = 0xF3
 
+       
         self.ops = {
                 HLT: self.hlt,
                 LDI: self.reg_add,
@@ -65,18 +64,24 @@ class CPU:
                 CALL: self.call,
                 RET: self.ret,
                 JMP: self.jump,
+                CMP: self.comp,
+                JEQ: self.jeq,
+                JNE: self.jne
             }
-    def hlt(self):
+    def hlt(self, MAR, MDR):
         self.halt = not self.halt
 
-    def print_num(self,MAR):
-        self.reg(MAR)
+    def print_num(self,MAR, MDR):
+        print(self.reg[MAR])
 
     def ram_read(self, MAR):
         return self.ram[MAR]
 
     def ram_write(self, MAR, MDR):
         self.ram[MAR] = MDR
+
+    def reg_add(self, MAR, MDR):
+        self.reg[MAR] = MDR        
 
     def mul(self, operand_a, operand_b):
         self.alu("MUL", operand_a, operand_b)
@@ -99,14 +104,38 @@ class CPU:
         self.ram[self.SP] = self.pc + 2
         self.pc = self.reg[operand_a]
 
-     def ret(self):
+    def ret(self):
         self.pc = self.ram[self.SP]
 
+    def jump(self, MAR, MDR):
+        self.pc = self.reg[MAR]
+    
+    def comp(self, a, b):
+        a = self.reg[a]
+        b = self.reg[b]
 
+
+        self.FL = 0b00000000
+        if a == b:
+            self.FL = 0b00000001
+        else:
+            self.FL = 0b00000000
+
+    def jeq(self, MAR, MDR):
+        if self.FL == 0b00000001:
+            self.jump(MAR, MDR)
+        else:
+            self.pc += 2
+
+    def jne(self, MAR, MDR):
+        if self.FL != 0b00000001:
+            self.jump(MAR, MDR)
+        else:
+            self.pc += 2
 
     def load(self):
         address = 0
-        
+
         try:
             with open(sys.argv[1]) as file:
                 for line in file:
